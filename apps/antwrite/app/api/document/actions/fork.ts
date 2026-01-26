@@ -1,10 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { auth } from "@/lib/auth";
+import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { generateUUID } from '@/lib/utils';
 import { getAllDocumentVersions } from '@/lib/db/queries';
 import { db } from '@antwrite/db';
 import * as schema from '@antwrite/db';
+import type { DocumentVersionData } from '@/types/document-version';
 
 interface ForkBody {
   originalDocumentId: string;
@@ -13,65 +14,90 @@ interface ForkBody {
   newTitle?: string;
 }
 
-export async function forkDocument(request: NextRequest, body: any): Promise<NextResponse> {
+export async function forkDocument(
+  request: NextRequest,
+  body: any,
+): Promise<NextResponse> {
   try {
-    const { originalDocumentId, forkFromTimestamp, versionIndex, newTitle } = body as ForkBody;
+    const { originalDocumentId, forkFromTimestamp, versionIndex, newTitle } =
+      body as ForkBody;
 
     const readonlyHeaders = await headers();
-    const session = await auth.api.getSession({ headers: new Headers(readonlyHeaders) });
-    
+    const session = await auth.api.getSession({
+      headers: new Headers(readonlyHeaders),
+    });
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    if (!originalDocumentId || (forkFromTimestamp === undefined && versionIndex === undefined)) {
-      return NextResponse.json({ error: 'Missing fork selector (timestamp or versionIndex)' }, { status: 400 });
+
+    if (
+      !originalDocumentId ||
+      (forkFromTimestamp === undefined && versionIndex === undefined)
+    ) {
+      return NextResponse.json(
+        { error: 'Missing fork selector (timestamp or versionIndex)' },
+        { status: 400 },
+      );
     }
-    
-    const allVersions = await getAllDocumentVersions({ 
-      documentId: originalDocumentId, 
-      userId: session.user.id 
+
+    const allVersions = await getAllDocumentVersions({
+      documentId: originalDocumentId,
+      userId: session.user.id,
     });
-    
+
     if (!allVersions.length) {
-      return NextResponse.json({ error: 'Document not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Document not found' },
+        { status: 404 },
+      );
     }
-    
-    let targetVersion;
+
+    let targetVersion: DocumentVersionData | undefined;
 
     if (typeof versionIndex === 'number') {
       targetVersion = allVersions[versionIndex];
     } else if (forkFromTimestamp) {
-      targetVersion = allVersions.find(v => {
-        const timeDiff = Math.abs(new Date(v.createdAt).getTime() - new Date(forkFromTimestamp).getTime());
+      targetVersion = allVersions.find((v) => {
+        const timeDiff = Math.abs(
+          new Date(v.createdAt).getTime() -
+            new Date(forkFromTimestamp).getTime(),
+        );
         return timeDiff < 1000;
       });
     }
-    
+
     if (!targetVersion) {
       return NextResponse.json({ error: 'Version not found' }, { status: 404 });
     }
-    
+
     const newDocumentId = generateUUID();
 
     const forkTime = new Date(
-      typeof forkFromTimestamp === 'string' ? forkFromTimestamp : targetVersion.createdAt
+      typeof forkFromTimestamp === 'string'
+        ? forkFromTimestamp
+        : targetVersion.createdAt,
     ).getTime();
 
-    const versionsUpToFork = allVersions.filter(v => new Date(v.createdAt).getTime() <= forkTime);
+    const versionsUpToFork = allVersions.filter(
+      (v) => new Date(v.createdAt).getTime() <= forkTime,
+    );
 
     const forkedDoc = await db.transaction(async (tx) => {
       const now = new Date();
 
-      const [doc] = await tx.insert(schema.Document).values({
-        id: newDocumentId,
-        title: newTitle || `${targetVersion.title} (Fork)`,
-        content: targetVersion.content,
-        userId: session.user.id,
-        chatId: null,
-        createdAt: now,
-        updatedAt: now,
-      }).returning();
+      const [doc] = await tx
+        .insert(schema.Document)
+        .values({
+          id: newDocumentId,
+          title: newTitle || `${targetVersion.title} (Fork)`,
+          content: targetVersion.content,
+          userId: session.user.id,
+          chatId: null,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning();
 
       if (versionsUpToFork.length > 0) {
         const versionInserts = versionsUpToFork.map((v, i) => ({
@@ -88,12 +114,14 @@ export async function forkDocument(request: NextRequest, body: any): Promise<Nex
     });
 
     return NextResponse.json({ forkedDocument: forkedDoc, newDocumentId });
-    
   } catch (error: any) {
     console.error('[Document API - FORK] Error forking document:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fork document',
-      details: error.message,
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Failed to fork document',
+        details: error.message,
+      },
+      { status: 500 },
+    );
   }
 }

@@ -1,6 +1,6 @@
 import { exampleSetup } from 'prosemirror-example-setup';
 import { inputRules } from 'prosemirror-inputrules';
-import { tableEditing, columnResizing, tableNodes as tableNodesPlugin } from 'prosemirror-tables';
+import { tableEditing, columnResizing } from 'prosemirror-tables';
 import type { Plugin } from 'prosemirror-state';
 
 import { documentSchema, headingRule } from './config';

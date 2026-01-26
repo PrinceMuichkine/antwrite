@@ -2,28 +2,29 @@ import { documentSchema } from '@/lib/editor/config';
 import type { Node } from 'prosemirror-model';
 
 // Convert DOCX content to ProseMirror document
-export async function convertDocxToProseMirror(arrayBuffer: ArrayBuffer): Promise<Node> {
+export async function convertDocxToProseMirror(
+  arrayBuffer: ArrayBuffer,
+): Promise<Node> {
   try {
     // Use mammoth to convert DOCX to HTML, which preserves more formatting than markdown
-    const [{ default: mammoth }] = await Promise.all([
-      import('mammoth'),
-    ]);
+    const [{ default: mammoth }] = await Promise.all([import('mammoth')]);
 
     const result = await mammoth.convertToHtml({ arrayBuffer });
-    let htmlContent = result.value;
+    const htmlContent = result.value;
 
     // Parse HTML into ProseMirror document
     const proseMirrorDoc = await htmlToProseMirror(htmlContent);
     return proseMirrorDoc;
-
   } catch (error) {
     console.error('Error converting DOCX to ProseMirror:', error);
     // Fallback to basic document
     const { nodes } = documentSchema;
     return nodes.doc.create(null, [
       nodes.paragraph.create(null, [
-        documentSchema.text('Error importing DOCX file. Please try again or contact support.')
-      ])
+        documentSchema.text(
+          'Error importing DOCX file. Please try again or contact support.',
+        ),
+      ]),
     ]);
   }
 }
@@ -40,7 +41,7 @@ async function htmlToProseMirror(htmlContent: string): Promise<Node> {
 
     // Clean up HTML - remove problematic elements
     const images = tempDiv.querySelectorAll('img');
-    images.forEach(img => {
+    images.forEach((img) => {
       const src = img.getAttribute('src');
       if (!src || src.trim() === '') {
         img.remove();
@@ -59,25 +60,30 @@ async function htmlToProseMirror(htmlContent: string): Promise<Node> {
     if (content.length === 0) {
       const textContent = tempDiv.textContent || '';
       if (textContent.trim()) {
-        content.push(nodes.paragraph.create(null, [
-          documentSchema.text(textContent.trim())
-        ]));
+        content.push(
+          nodes.paragraph.create(null, [
+            documentSchema.text(textContent.trim()),
+          ]),
+        );
       }
     }
-
   } catch (error) {
     console.warn('Error parsing HTML to ProseMirror:', error);
     // Fallback
-    content.push(nodes.paragraph.create(null, [
-      documentSchema.text('Error parsing document content.')
-    ]));
+    content.push(
+      nodes.paragraph.create(null, [
+        documentSchema.text('Error parsing document content.'),
+      ]),
+    );
   }
 
   return nodes.doc.create(null, content);
 }
 
 // Convert HTML element to ProseMirror node
-async function convertHTMLElementToProseMirror(element: Element): Promise<Node | null> {
+async function convertHTMLElementToProseMirror(
+  element: Element,
+): Promise<Node | null> {
   const { nodes, marks } = documentSchema;
 
   const tagName = element.tagName.toLowerCase();
@@ -92,11 +98,12 @@ async function convertHTMLElementToProseMirror(element: Element): Promise<Node |
     case 'h3':
     case 'h4':
     case 'h5':
-    case 'h6':
-      const level = parseInt(tagName.charAt(1));
+    case 'h6': {
+      const level = Number.parseInt(tagName.charAt(1));
       return nodes.heading.create({ level: Math.min(level, 2) }, [
-        documentSchema.text(textContent)
+        documentSchema.text(textContent),
       ]);
+    }
 
     case 'table':
       return convertTableElement(element);
@@ -104,9 +111,7 @@ async function convertHTMLElementToProseMirror(element: Element): Promise<Node |
     case 'ul':
     case 'ol':
       // For now, convert lists to paragraphs (can be enhanced later)
-      return nodes.paragraph.create(null, [
-        documentSchema.text(textContent)
-      ]);
+      return nodes.paragraph.create(null, [documentSchema.text(textContent)]);
 
     case 'br':
       return nodes.paragraph.create();
@@ -115,7 +120,7 @@ async function convertHTMLElementToProseMirror(element: Element): Promise<Node |
       // For other elements, extract text content
       if (textContent.trim()) {
         return nodes.paragraph.create(null, [
-          documentSchema.text(textContent.trim())
+          documentSchema.text(textContent.trim()),
         ]);
       }
       return null;
@@ -151,9 +156,9 @@ function convertTableElement(element: Element): Node | null {
       const cellText = cell.textContent || '';
 
       if (cellText.trim()) {
-        cellContent.push(nodes.paragraph.create(null, [
-          documentSchema.text(cellText.trim())
-        ]));
+        cellContent.push(
+          nodes.paragraph.create(null, [documentSchema.text(cellText.trim())]),
+        );
       } else {
         cellContent.push(nodes.paragraph.create());
       }
@@ -175,20 +180,21 @@ function convertTableElement(element: Element): Node | null {
   return nodes.table.create(null, rows);
 }
 
-
 // Legacy function for backward compatibility
-export async function convertDocxToMarkdown(arrayBuffer: ArrayBuffer): Promise<string> {
+export async function convertDocxToMarkdown(
+  arrayBuffer: ArrayBuffer,
+): Promise<string> {
   // This will be replaced with proper ProseMirror conversion
   return 'DOCX import is being upgraded to preserve formatting...';
 }
 
 // Helper function to extract text content from DOCX for basic import
-export async function extractTextFromDocx(arrayBuffer: ArrayBuffer): Promise<string> {
+export async function extractTextFromDocx(
+  arrayBuffer: ArrayBuffer,
+): Promise<string> {
   try {
     // Use mammoth to extract text content from DOCX
-    const [{ default: mammoth }] = await Promise.all([
-      import('mammoth'),
-    ]);
+    const [{ default: mammoth }] = await Promise.all([import('mammoth')]);
 
     const result = await mammoth.extractRawText({ arrayBuffer });
     return result.value;

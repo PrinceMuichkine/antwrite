@@ -24,7 +24,13 @@ export async function POST(request: NextRequest) {
     return forkDocument(request, body);
   }
 
-  if (body.id && body.title && body.content === undefined && !body.kind && !body.chatId) {
+  if (
+    body.id &&
+    body.title &&
+    body.content === undefined &&
+    !body.kind &&
+    !body.chatId
+  ) {
     console.log('[Document API] Detected rename operation');
     return renameDocument(request, body);
   }

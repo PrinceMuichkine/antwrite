@@ -3,8 +3,38 @@
 import React, { useState } from 'react';
 import { toggleMark, setBlockType } from 'prosemirror-commands';
 import { wrapInList, liftListItem } from 'prosemirror-schema-list';
-import { addColumnAfter, addColumnBefore, deleteColumn, addRowAfter, addRowBefore, deleteRow, mergeCells, splitCell, setCellAttr, toggleHeaderRow, toggleHeaderColumn, deleteTable } from 'prosemirror-tables';
-import { List, ListOrdered, Bold, Italic, Underline, ChevronDown, Palette, Image, Table, Plus, Minus, Merge, Split, AlignLeft, AlignCenter, AlignRight, AlignJustify, MoveVertical } from 'lucide-react';
+import {
+  addColumnAfter,
+  addColumnBefore,
+  deleteColumn,
+  addRowAfter,
+  addRowBefore,
+  deleteRow,
+  mergeCells,
+  splitCell,
+  toggleHeaderRow,
+  deleteTable,
+} from 'prosemirror-tables';
+import {
+  List,
+  ListOrdered,
+  Bold,
+  Italic,
+  Underline,
+  ChevronDown,
+  Palette,
+  Image,
+  Table,
+  Plus,
+  Minus,
+  Merge,
+  Split,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
+  MoveVertical,
+} from 'lucide-react';
 import { documentSchema } from '@/lib/editor/config';
 import { getActiveEditorView } from '@/lib/editor/editor-state';
 import { Button } from '@/components/ui/button';
@@ -28,24 +58,26 @@ import {
   TooltipContent,
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { EditorState } from 'prosemirror-state';
+import type { EditorState } from 'prosemirror-state';
 import type { FormatState } from '@/lib/editor/format-plugin';
 
 const { nodes, marks } = documentSchema;
 
-const applyMark = (markType: any, attrs?: any) => (state: EditorState, dispatch: any) => {
-  const { from, to } = state.selection;
-  const tr = state.tr.addMark(from, to, markType.create(attrs));
-  dispatch(tr);
-  return true;
-};
+const applyMark =
+  (markType: any, attrs?: any) => (state: EditorState, dispatch: any) => {
+    const { from, to } = state.selection;
+    const tr = state.tr.addMark(from, to, markType.create(attrs));
+    dispatch(tr);
+    return true;
+  };
 
-const applyTextColor = (color: string) => (state: EditorState, dispatch: any) => {
-  const { from, to } = state.selection;
-  const tr = state.tr.addMark(from, to, marks.textColor.create({ color }));
-  dispatch(tr);
-  return true;
-};
+const applyTextColor =
+  (color: string) => (state: EditorState, dispatch: any) => {
+    const { from, to } = state.selection;
+    const tr = state.tr.addMark(from, to, marks.textColor.create({ color }));
+    dispatch(tr);
+    return true;
+  };
 
 function runCommand(command: (state: any, dispatch?: any) => boolean) {
   const view = getActiveEditorView();
@@ -84,34 +116,108 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
   const wordCount = textContent.trim().split(/\s+/).filter(Boolean).length;
   const [colorPickerOpen, setColorPickerOpen] = useState(false);
 
+  // Check if cursor or selection is inside a table
+  const isInTable = view
+    ? (() => {
+        // Check if selection spans table content
+        const { from, to } = view.state.selection;
+        let hasTable = false;
+        view.state.doc.nodesBetween(from, to, (node) => {
+          if (node.type.name === 'table') {
+            hasTable = true;
+            return false;
+          }
+          return true;
+        });
+        return hasTable;
+      })()
+    : false;
+
   const textOptions: {
     label: string;
     formatKey: keyof typeof activeFormats;
     command: () => void;
   }[] = [
-      {
-        label: 'Heading 1',
-        formatKey: 'h1',
-        command: () => runCommand(setBlockType(nodes.heading, { level: 1 })),
-      },
-      {
-        label: 'Heading 2',
-        formatKey: 'h2',
-        command: () => runCommand(setBlockType(nodes.heading, { level: 2 })),
-      },
-      {
-        label: 'Paragraph',
-        formatKey: 'p',
-        command: () => runCommand(setBlockType(nodes.paragraph)),
-      },
-    ];
+    {
+      label: 'Heading 1',
+      formatKey: 'h1',
+      command: () => runCommand(setBlockType(nodes.heading, { level: 1 })),
+    },
+    {
+      label: 'Heading 2',
+      formatKey: 'h2',
+      command: () => runCommand(setBlockType(nodes.heading, { level: 2 })),
+    },
+    {
+      label: 'Paragraph',
+      formatKey: 'p',
+      command: () => runCommand(setBlockType(nodes.paragraph)),
+    },
+  ];
 
-  const fontFamilies = ["Arial", "Verdana", "Times New Roman", "Courier New", "Georgia"];
-  const fontSizes = ["10px", "11px", "12px", "14px", "18px", "24px"];
+  const fontFamilies = [
+    'Arial',
+    'Verdana',
+    'Times New Roman',
+    'Courier New',
+    'Georgia',
+    'Helvetica',
+    'Calibri',
+    'Cambria',
+    'Trebuchet MS',
+    'Lucida Console',
+    'Playfair Display',
+    'Lora',
+    'Montserrat',
+    'Poppins',
+    'Inter',
+    'Crimson Text',
+    'Fira Code',
+  ];
+  const fontSizes = [
+    '8px',
+    '9px',
+    '10px',
+    '11px',
+    '12px',
+    '14px',
+    '16px',
+    '18px',
+    '20px',
+    '24px',
+    '28px',
+    '32px',
+    '36px',
+    '48px',
+    '64px',
+    '72px',
+  ];
   const textColors = [
-    '#FFFFFF', '#F9FAFB', '#F3F4F6', '#E5E7EB', '#D1D5DB', '#9CA3AF', '#6B7280', '#374151', '#111827', '#000000', // grays + white
-    '#DC2626', '#EA580C', '#D97706', '#65A30D', '#059669', '#0891B2', '#2563EB', '#7C3AED', '#C026D3', '#DB2777', // warm colors
-    '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#8B5CF6' // additional colors
+    '#FFFFFF',
+    '#F9FAFB',
+    '#F3F4F6',
+    '#E5E7EB',
+    '#D1D5DB',
+    '#9CA3AF',
+    '#6B7280',
+    '#374151',
+    '#111827',
+    '#000000', // grays + white
+    '#DC2626',
+    '#EA580C',
+    '#D97706',
+    '#65A30D',
+    '#059669',
+    '#0891B2',
+    '#2563EB',
+    '#7C3AED',
+    '#C026D3',
+    '#DB2777', // warm colors
+    '#F59E0B',
+    '#10B981',
+    '#06B6D4',
+    '#3B82F6',
+    '#8B5CF6', // additional colors
   ];
 
   const ButtonWithTooltip = ({
@@ -183,8 +289,8 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
               className={cn(
                 'text-sm rounded-sm',
                 opt.formatKey &&
-                activeFormats[opt.formatKey] &&
-                'bg-accent text-accent-foreground',
+                  activeFormats[opt.formatKey] &&
+                  'bg-accent text-accent-foreground',
               )}
             >
               {opt.label}
@@ -200,7 +306,9 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
             className="h-8 px-3 min-w-28 flex items-center justify-between gap-2 text-sm rounded-sm border border-border bg-background text-foreground shrink-0"
             onMouseDown={(e) => e.preventDefault()}
           >
-            <span style={{ fontFamily: activeFormats.fontFamily }}>{activeFormats.fontFamily}</span>
+            <span style={{ fontFamily: activeFormats.fontFamily }}>
+              {activeFormats.fontFamily}
+            </span>
             <ChevronDown className="size-4 ml-1 text-muted-foreground" />
           </Button>
         </DropdownMenuTrigger>
@@ -211,7 +319,9 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
           {fontFamilies.map((font) => (
             <DropdownMenuItem
               key={font}
-              onSelect={() => runCommand(applyMark(marks.fontFamily, { fontFamily: font }))}
+              onSelect={() =>
+                runCommand(applyMark(marks.fontFamily, { fontFamily: font }))
+              }
             >
               <span style={{ fontFamily: font }}>{font}</span>
             </DropdownMenuItem>
@@ -237,7 +347,9 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
           {fontSizes.map((size) => (
             <DropdownMenuItem
               key={size}
-              onSelect={() => runCommand(applyMark(marks.fontSize, { fontSize: size }))}
+              onSelect={() =>
+                runCommand(applyMark(marks.fontSize, { fontSize: size }))
+              }
             >
               <span>{size.replace('px', '')}</span>
             </DropdownMenuItem>
@@ -245,7 +357,11 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Popover open={colorPickerOpen} onOpenChange={setColorPickerOpen} modal={true}>
+      <Popover
+        open={colorPickerOpen}
+        onOpenChange={setColorPickerOpen}
+        modal={true}
+      >
         <PopoverTrigger asChild>
           <Button
             variant="outline"
@@ -262,14 +378,16 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
         </PopoverTrigger>
         <PopoverContent className="w-42 p-3 pr-2" align="start">
           <div className="space-y-3">
-            <div className="text-sm font-medium text-foreground">Text Color</div>
+            <div className="text-sm font-medium text-foreground">
+              Text Color
+            </div>
             <div className="grid grid-cols-5 gap-1">
               {textColors.map((color) => (
                 <button
                   key={color}
                   className={cn(
                     'w-5 h-5 rounded border-2 border-transparent hover:border-ring transition-colors',
-                    activeFormats.textColor === color && 'border-ring'
+                    activeFormats.textColor === color && 'border-ring',
                   )}
                   style={{ backgroundColor: color }}
                   onClick={() => runCommand(applyTextColor(color))}
@@ -281,11 +399,14 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
             </div>
             <div className="flex items-center gap-2 pt-2 border-t">
               <button
+                type="button"
                 className="size-6 rounded border border-border overflow-hidden cursor-pointer relative"
                 style={{ backgroundColor: activeFormats.textColor }}
                 onClick={(e) => {
                   // Find and click the hidden input
-                  const input = e.currentTarget.querySelector('input[type="color"]') as HTMLInputElement;
+                  const input = e.currentTarget.querySelector(
+                    'input[type="color"]',
+                  ) as HTMLInputElement;
                   input?.click();
                 }}
                 onMouseDown={(e) => e.preventDefault()}
@@ -312,27 +433,51 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
             className="h-8 px-3 min-w-8 flex items-center justify-center rounded-sm border border-border bg-background text-foreground shrink-0"
             onMouseDown={(e) => e.preventDefault()}
           >
-            {activeFormats.textAlign === 'left' && <AlignLeft className="size-4" />}
-            {activeFormats.textAlign === 'center' && <AlignCenter className="size-4" />}
-            {activeFormats.textAlign === 'right' && <AlignRight className="size-4" />}
-            {activeFormats.textAlign === 'justify' && <AlignJustify className="size-4" />}
+            {activeFormats.textAlign === 'left' && (
+              <AlignLeft className="size-4" />
+            )}
+            {activeFormats.textAlign === 'center' && (
+              <AlignCenter className="size-4" />
+            )}
+            {activeFormats.textAlign === 'right' && (
+              <AlignRight className="size-4" />
+            )}
+            {activeFormats.textAlign === 'justify' && (
+              <AlignJustify className="size-4" />
+            )}
             <ChevronDown className="size-3 ml-1" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-32 p-1 shadow-lg rounded-sm border bg-popover">
-          <DropdownMenuItem onSelect={() => runCommand(applyMark(marks.textAlign, { align: 'left' }))}>
+          <DropdownMenuItem
+            onSelect={() =>
+              runCommand(applyMark(marks.textAlign, { align: 'left' }))
+            }
+          >
             <AlignLeft className="size-4 mr-2" />
             Left
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand(applyMark(marks.textAlign, { align: 'center' }))}>
+          <DropdownMenuItem
+            onSelect={() =>
+              runCommand(applyMark(marks.textAlign, { align: 'center' }))
+            }
+          >
             <AlignCenter className="size-4 mr-2" />
             Center
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand(applyMark(marks.textAlign, { align: 'right' }))}>
+          <DropdownMenuItem
+            onSelect={() =>
+              runCommand(applyMark(marks.textAlign, { align: 'right' }))
+            }
+          >
             <AlignRight className="size-4 mr-2" />
             Right
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => runCommand(applyMark(marks.textAlign, { align: 'justify' }))}>
+          <DropdownMenuItem
+            onSelect={() =>
+              runCommand(applyMark(marks.textAlign, { align: 'justify' }))
+            }
+          >
             <AlignJustify className="size-4 mr-2" />
             Justify
           </DropdownMenuItem>
@@ -355,7 +500,9 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
           {['1.0', '1.2', '1.5', '1.8', '2.0'].map((height) => (
             <DropdownMenuItem
               key={height}
-              onSelect={() => runCommand(applyMark(marks.lineHeight, { lineHeight: height }))}
+              onSelect={() =>
+                runCommand(applyMark(marks.lineHeight, { lineHeight: height }))
+              }
             >
               {height}
             </DropdownMenuItem>
@@ -523,6 +670,61 @@ export function EditorToolbar({ activeFormats }: EditorToolbarProps) {
             <Minus className="size-4 mr-2" />
             Delete Table
           </DropdownMenuItem>
+          {isInTable && (
+            <DropdownMenuItem
+              onSelect={() => {
+                // Toggle table transparency
+                const view = getActiveEditorView();
+                if (!view) return;
+
+                const { state } = view;
+                const { doc } = state;
+
+                // Find table node in the document
+                let tablePos = -1;
+                let tableNode: any = null as any;
+
+                doc.descendants((node, pos) => {
+                  if (node.type.name === 'table') {
+                    // Check if selection is inside this table
+                    if (
+                      state.selection.from >= pos &&
+                      state.selection.to <= pos + node.nodeSize
+                    ) {
+                      tablePos = pos;
+                      tableNode = node;
+                      return false; // Stop searching
+                    }
+                  }
+                  return true;
+                });
+
+                if (tableNode && tablePos >= 0) {
+                  const currentClass = (tableNode as any).attrs.class || '';
+                  const hasTransparentClass =
+                    currentClass.includes('transparent-table');
+
+                  const newClass = hasTransparentClass
+                    ? currentClass
+                        .replace(/\s*transparent-table\s*/g, '')
+                        .trim()
+                    : `${currentClass} transparent-table`.trim();
+
+                  const newAttrs = {
+                    ...(tableNode as any).attrs,
+                    class: newClass,
+                  };
+
+                  const tr = state.tr.setNodeMarkup(tablePos, null, newAttrs);
+                  view.dispatch(tr);
+                  view.focus();
+                }
+              }}
+            >
+              <Table className="size-4 mr-2" />
+              Toggle Transparency
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -123,7 +123,6 @@ export function savePlugin({
           return newPluginState;
         }
 
-
         const wasEmpty = oldState.doc.content.size <= 2;
         if (
           documentId === 'init' &&

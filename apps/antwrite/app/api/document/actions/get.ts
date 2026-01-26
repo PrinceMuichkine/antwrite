@@ -33,7 +33,6 @@ export async function getDocuments(request: NextRequest) {
     const limitParam = searchParams.get('limit');
     const endingBefore = searchParams.get('ending_before');
 
-
     // --- Fetch by specific document ID ---
     if (id) {
       // Validate document ID (moved inside the 'if' block)
@@ -46,7 +45,10 @@ export async function getDocuments(request: NextRequest) {
       const includeVersions = searchParams.get('includeVersions') === 'true';
 
       if (includeVersions) {
-        const allVersions = await getAllDocumentVersions({ documentId: id, userId: userId });
+        const allVersions = await getAllDocumentVersions({
+          documentId: id,
+          userId: userId,
+        });
         return NextResponse.json(allVersions || []);
       } else {
         // Fetch using Drizzle query (already checks user ID)

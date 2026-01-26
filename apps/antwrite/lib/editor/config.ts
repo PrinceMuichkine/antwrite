@@ -28,13 +28,21 @@ const diffMarkSpec = {
 
 const underlineMarkSpec = {
   parseDOM: [{ tag: 'u' }],
-  toDOM() { return ['u', 0] },
+  toDOM() {
+    return ['u', 0];
+  },
 };
 
 const strikeMarkSpec = {
-  parseDOM: [{ tag: 's' }, { tag: 'strike' }, { style: 'text-decoration=line-through' }],
-  toDOM() { return ['s', 0] },
-}
+  parseDOM: [
+    { tag: 's' },
+    { tag: 'strike' },
+    { style: 'text-decoration=line-through' },
+  ],
+  toDOM() {
+    return ['s', 0];
+  },
+};
 
 const fontSizeMarkSpec = {
   attrs: {
@@ -137,44 +145,81 @@ const imageNodeSpec = {
     else if (node.attrs.align === 'right') classes.push('ml-auto block');
     else classes.push('block'); // left align
 
-    return ['img', {
-      src: node.attrs.src,
-      alt: node.attrs.alt || '',
-      title: node.attrs.title,
-      class: classes.join(' '),
-      'data-align': node.attrs.align,
-    }];
+    return [
+      'img',
+      {
+        src: node.attrs.src,
+        alt: node.attrs.alt || '',
+        title: node.attrs.title,
+        class: classes.join(' '),
+        'data-align': node.attrs.align,
+      },
+    ];
   },
-  parseDOM: [{
-    tag: 'img[src]',
-    getAttrs(dom: any) {
-      return {
-        src: dom.getAttribute('src'),
-        alt: dom.getAttribute('alt') || '',
-        title: dom.getAttribute('title'),
-        align: dom.getAttribute('data-align') || 'left',
-      };
+  parseDOM: [
+    {
+      tag: 'img[src]',
+      getAttrs(dom: any) {
+        return {
+          src: dom.getAttribute('src'),
+          alt: dom.getAttribute('alt') || '',
+          title: dom.getAttribute('title'),
+          align: dom.getAttribute('data-align') || 'left',
+        };
+      },
     },
-  }],
+  ],
 };
+
+const tableNodesSpecs = tableNodes({
+  tableGroup: 'block',
+  cellContent: 'block+',
+  cellAttributes: {
+    background: {
+      default: null,
+      getFromDOM(dom: HTMLElement) {
+        return dom.style.backgroundColor || null;
+      },
+      setDOMAttr(value: any, attrs: any) {
+        if (value)
+          attrs.style = `${attrs.style || ''}background-color: ${value};`;
+      },
+    },
+  },
+} as any);
+
+// Add class attribute support to table node
+const tableNode = (tableNodesSpecs as any).table;
+if (tableNode) {
+  tableNode.attrs = { ...tableNode.attrs, class: { default: null } };
+
+  // Modify the existing toDOM method to include class
+  const originalToDOM = tableNode.toDOM;
+  tableNode.toDOM = (node: any) => {
+    const domSpec = originalToDOM(node);
+    if (node.attrs.class) {
+      if (Array.isArray(domSpec) && domSpec.length >= 2) {
+        domSpec[1] = { ...domSpec[1], class: node.attrs.class };
+      }
+    }
+    return domSpec;
+  };
+
+  // Modify parseDOM to handle class
+  if (tableNode.parseDOM && tableNode.parseDOM.length > 0) {
+    const originalGetAttrs = tableNode.parseDOM[0].getAttrs;
+    tableNode.parseDOM[0].getAttrs = (dom: HTMLElement) => {
+      const attrs = originalGetAttrs ? originalGetAttrs(dom) : {};
+      return { ...attrs, class: dom.getAttribute('class') };
+    };
+  }
+}
 
 export const documentSchema = new Schema({
   nodes: addListNodes(
-    schema.spec.nodes
-      .addToEnd('image', imageNodeSpec)
-      .append(tableNodes({
-        tableGroup: "block",
-        cellContent: "block+",
-        cellAttributes: {
-          background: {
-            default: null,
-            getFromDOM(dom) { return (dom as HTMLElement).style.backgroundColor || null },
-            setDOMAttr(value, attrs) { if (value) attrs.style = (attrs.style || "") + `background-color: ${value};` }
-          }
-        }
-      })),
+    schema.spec.nodes.addToEnd('image', imageNodeSpec).append(tableNodesSpecs),
     'paragraph block*',
-    'block'
+    'block',
   ),
   marks: OrderedMap.from({
     ...schema.spec.marks.toObject(),

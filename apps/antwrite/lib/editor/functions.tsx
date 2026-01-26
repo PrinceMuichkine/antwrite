@@ -22,7 +22,9 @@ const markdownSerializer = new MarkdownSerializer(
   {
     ...defaultMarkdownSerializer.nodes,
     image(state: any, node: any) {
-      state.write(`![${node.attrs.alt || ''}](${node.attrs.src}${node.attrs.title ? ` "${node.attrs.title}"` : ''})`);
+      state.write(
+        `![${node.attrs.alt || ''}](${node.attrs.src}${node.attrs.title ? ` "${node.attrs.title}"` : ''})`,
+      );
     },
     table(state: any, node: any) {
       state.write('\n');
@@ -35,7 +37,10 @@ const markdownSerializer = new MarkdownSerializer(
         if (row.type.name === 'table_row') {
           const cells: string[] = [];
           row.forEach((cell: any) => {
-            if (cell.type.name === 'table_cell' || cell.type.name === 'table_header') {
+            if (
+              cell.type.name === 'table_cell' ||
+              cell.type.name === 'table_header'
+            ) {
               const cellText = cell.textContent.trim().replace(/\n+/g, ' ');
               cells.push(cellText || ' ');
             }
@@ -54,11 +59,11 @@ const markdownSerializer = new MarkdownSerializer(
           while (row.length < maxCols) {
             row.push(' ');
           }
-          state.write('| ' + row.join(' | ') + ' |\n');
+          state.write(`| ${row.join(' | ')} |\n`);
 
           // Add separator after header row (first row)
           if (index === 0) {
-            state.write('|' + ' --- |'.repeat(maxCols) + '\n');
+            state.write(`|${' --- |'.repeat(maxCols)}\n`);
           }
         });
         state.write('\n');

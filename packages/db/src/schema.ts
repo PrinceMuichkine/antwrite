@@ -6,7 +6,6 @@ import {
   varchar,
   jsonb,
   boolean,
-  primaryKey,
   integer,
   pgEnum,
   uniqueIndex,
@@ -126,6 +125,7 @@ export const Document = pgTable(
       .references(() => user.id),
     chatId: uuid('chatId').references(() => Chat.id),
     is_starred: boolean('is_starred').notNull().default(false),
+    is_current: boolean('is_current').notNull().default(true),
     visibility: text('visibility', { enum: ['public', 'private'] })
       .notNull()
       .default('private'),
@@ -154,8 +154,13 @@ export const DocumentVersion = pgTable('DocumentVersion', {
   version: integer('version').notNull().default(1),
   content: text('content').notNull(),
   diffContent: text('diff_content'),
-  previousVersionId: uuid('previous_version_id').references((): AnyPgColumn => DocumentVersion.id),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'date' }).notNull(),
+  previousVersionId: uuid('previous_version_id').references(
+    (): AnyPgColumn => DocumentVersion.id,
+  ),
+  createdAt: timestamp('created_at', {
+    withTimezone: true,
+    mode: 'date',
+  }).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'date' })
     .notNull()
     .$onUpdate(() => new Date()),
@@ -265,12 +270,15 @@ export const documentRelations = relations(Document, ({ one, many }) => ({
   versions: many(DocumentVersion),
 }));
 
-export const documentVersionRelations = relations(DocumentVersion, ({ one }) => ({
-  document: one(Document, {
-    fields: [DocumentVersion.documentId],
-    references: [Document.id],
+export const documentVersionRelations = relations(
+  DocumentVersion,
+  ({ one }) => ({
+    document: one(Document, {
+      fields: [DocumentVersion.documentId],
+      references: [Document.id],
+    }),
   }),
-}));
+);
 
 export const messageRelations = relations(Message, ({ one }) => ({
   chat: one(Chat, {

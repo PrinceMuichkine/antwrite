@@ -24,7 +24,6 @@ const connectionOptions: postgres.Options<
   ssl: sslSetting,
 };
 
-
 // Create the connection pool
 // Use process.env.DATABASE_URL or a default dummy URL if not set
 const queryClient = postgres(

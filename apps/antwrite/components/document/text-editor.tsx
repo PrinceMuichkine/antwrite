@@ -28,12 +28,8 @@ import {
 } from '@/lib/editor/save-plugin';
 import { createEditorPlugins } from '@/lib/editor/editor-plugins';
 import type { FormatState } from '@/lib/editor/format-plugin';
-import {
-  inlineSuggestionPluginKey,
-  createInlineSuggestionCallback,
-} from '@/lib/editor/inline-suggestion-plugin';
+import { createInlineSuggestionCallback } from '@/lib/editor/inline-suggestion-plugin';
 import { EditorContextMenu } from './editor-context-menu';
-
 
 // Image drop handler
 async function handleImageDrop(view: EditorView, file: File) {
@@ -114,8 +110,9 @@ function PureEditor({
     lineHeight: '1.5',
   });
 
-  const [currentSelection, setCurrentSelection] = useState<{ from: number; to: number } | undefined>(undefined);
-
+  const [currentSelection, setCurrentSelection] = useState<
+    { from: number; to: number } | undefined
+  >(undefined);
 
   useEffect(() => {
     currentDocumentIdRef.current = documentId;
@@ -197,7 +194,6 @@ function PureEditor({
             const proseMirrorElement =
               editorElement.querySelector('.ProseMirror');
 
-
             // Check if clicking in empty space (below content or in padding)
             const rect = editorElement.getBoundingClientRect();
             const clickY = event.clientY;
@@ -236,7 +232,11 @@ function PureEditor({
           },
           dragover: (view, event) => {
             const files = event.dataTransfer?.files;
-            if (files && files.length > 0 && files[0].type.startsWith('image/')) {
+            if (
+              files &&
+              files.length > 0 &&
+              files[0].type.startsWith('image/')
+            ) {
               event.preventDefault();
               view.dom.parentElement?.classList.add('drag-over');
               return true;
@@ -249,8 +249,12 @@ function PureEditor({
             const rect = view.dom.parentElement?.getBoundingClientRect();
             if (rect) {
               const { clientX, clientY } = event;
-              if (clientX < rect.left || clientX > rect.right ||
-                clientY < rect.top || clientY > rect.bottom) {
+              if (
+                clientX < rect.left ||
+                clientX > rect.right ||
+                clientY < rect.top ||
+                clientY > rect.bottom
+              ) {
                 view.dom.parentElement?.classList.remove('drag-over');
               }
             }
@@ -290,9 +294,11 @@ function PureEditor({
           // Dispatch content change event for offline versioning
           if (transaction.docChanged) {
             const newContent = buildContentFromDocument(newState.doc);
-            window.dispatchEvent(new CustomEvent('editor:content-changed', {
-              detail: { documentId, content: newContent }
-            }));
+            window.dispatchEvent(
+              new CustomEvent('editor:content-changed', {
+                detail: { documentId, content: newContent },
+              }),
+            );
           }
 
           if (
@@ -441,7 +447,7 @@ function PureEditor({
           const transaction = editorRef.current.state.tr.replaceWith(
             0,
             editorRef.current.state.doc.content.size,
-            newDoc.content
+            newDoc.content,
           );
           transaction.setMeta('external', true);
           transaction.setMeta('addToHistory', false);
@@ -486,9 +492,7 @@ function PureEditor({
   return (
     <>
       {isCurrentVersion && documentId !== 'init' && (
-        <EditorToolbar
-          activeFormats={activeFormats}
-        />
+        <EditorToolbar activeFormats={activeFormats} />
       )}
       <EditorContextMenu
         selection={currentSelection as { from: number; to: number } | undefined}
@@ -732,6 +736,26 @@ function PureEditor({
           text-align: left;
           background-color: hsl(var(--muted));
           color: hsl(var(--foreground));
+        }
+
+        /* Transparent table styles */
+        table.transparent-table,
+        table.transparent-table * {
+          border: none !important;
+          background: transparent !important;
+          border-collapse: collapse !important;
+        }
+
+        table.transparent-table td,
+        table.transparent-table th {
+          border: none !important;
+          background: transparent !important;
+          padding: 3px 5px !important;
+        }
+
+        table.transparent-table tr {
+          border: none !important;
+          background: transparent !important;
         }
 
         .ProseMirror table .selectedCell {

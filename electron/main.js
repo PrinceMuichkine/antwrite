@@ -6,7 +6,7 @@ const {
   dialog,
   ipcMain,
 } = require('electron');
-const path = require('path');
+const path = require('node:path');
 const isDev = process.env.NODE_ENV === 'development';
 
 // Keep a global reference of the window object
@@ -46,16 +46,16 @@ function createWindow() {
             ...details.responseHeaders,
             'Content-Security-Policy': [
               "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-              "style-src 'self' 'unsafe-inline' data:; " +
-              "img-src 'self' data: blob: https: http:; " +
-              "font-src 'self' data: https: http:; " +
-              "connect-src 'self' https: http: wss: ws: data: blob:; " +
-              "media-src 'self' data: blob: https: http:; " +
-              "object-src 'none'; " +
-              "frame-src 'self' https: http:; " +
-              "base-uri 'self'; " +
-              "form-action 'self' https: http:;",
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+                "style-src 'self' 'unsafe-inline' data:; " +
+                "img-src 'self' data: blob: https: http:; " +
+                "font-src 'self' data: https: http:; " +
+                "connect-src 'self' https: http: wss: ws: data: blob:; " +
+                "media-src 'self' data: blob: https: http:; " +
+                "object-src 'none'; " +
+                "frame-src 'self' https: http:; " +
+                "base-uri 'self'; " +
+                "form-action 'self' https: http:;",
             ],
           },
         });
@@ -128,10 +128,12 @@ app.on('open-file', (event, filePath) => {
   event.preventDefault();
 
   // Check if it's a Word document
-  const isWordDoc = filePath.toLowerCase().endsWith('.docx') || filePath.toLowerCase().endsWith('.doc');
+  const isWordDoc =
+    filePath.toLowerCase().endsWith('.docx') ||
+    filePath.toLowerCase().endsWith('.doc');
   if (isWordDoc) {
     // Send to renderer for processing
-    if (mainWindow && mainWindow.webContents) {
+    if (mainWindow?.webContents) {
       mainWindow.webContents.send('open-word-file', filePath);
     }
   } else {
@@ -139,7 +141,8 @@ app.on('open-file', (event, filePath) => {
     dialog.showMessageBox(mainWindow, {
       type: 'error',
       title: 'Unsupported File Type',
-      message: 'AntWrite currently only supports opening Word documents (.docx, .doc) from the file system.',
+      message:
+        'AntWrite currently only supports opening Word documents (.docx, .doc) from the file system.',
     });
   }
 });
@@ -177,7 +180,10 @@ const template = [
             .then((result) => {
               if (!result.canceled) {
                 const filePath = result.filePaths[0];
-                if (filePath.toLowerCase().endsWith('.docx') || filePath.toLowerCase().endsWith('.doc')) {
+                if (
+                  filePath.toLowerCase().endsWith('.docx') ||
+                  filePath.toLowerCase().endsWith('.doc')
+                ) {
                   mainWindow.webContents.send('open-word-file', filePath);
                 } else {
                   mainWindow.webContents.send('open-file', filePath);
@@ -330,7 +336,7 @@ ipcMain.handle('dialog-save-file', async (event, content, defaultPath) => {
   });
 
   if (!result.canceled && result.filePath) {
-    const fs = require('fs').promises;
+    const fs = require('node:fs').promises;
     await fs.writeFile(result.filePath, content, 'utf8');
     return result.filePath;
   }
@@ -342,7 +348,7 @@ ipcMain.handle('get-version', () => {
 });
 
 ipcMain.handle('read-file', async (event, filePath) => {
-  const fs = require('fs').promises;
+  const fs = require('node:fs').promises;
   try {
     const buffer = await fs.readFile(filePath);
     return buffer;
@@ -352,8 +358,8 @@ ipcMain.handle('read-file', async (event, filePath) => {
 });
 
 ipcMain.handle('get-file-info', async (event, filePath) => {
-  const fs = require('fs').promises;
-  const path = require('path');
+  const fs = require('node:fs').promises;
+  const path = require('node:path');
 
   try {
     const stats = await fs.stat(filePath);

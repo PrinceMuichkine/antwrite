@@ -34,37 +34,37 @@ export async function updateTextDocument({
 }): Promise<string> {
   let draftContent = '';
 
-    const { fullStream } = streamText({
-      model: myProvider.languageModel('artifact-model'),
-      system: `
+  const { fullStream } = streamText({
+    model: myProvider.languageModel('artifact-model'),
+    system: `
 Provide the revised document content in valid Markdown only, using headings (#, ##), bold and italics and only where appropriate.
 Do not include any commentary. Never use Tables. 
       `.trim(),
-      experimental_transform: smoothStream({ chunking: 'line' }),
-      prompt: description,
-      experimental_providerMetadata: {
-        openai: {
-          prediction: {
-            type: 'content',
-            content: document.content,
-          },
+    experimental_transform: smoothStream({ chunking: 'line' }),
+    prompt: description,
+    experimental_providerMetadata: {
+      openai: {
+        prediction: {
+          type: 'content',
+          content: document.content,
         },
       },
-    });
+    },
+  });
 
-    for await (const delta of fullStream) {
-      const { type } = delta;
+  for await (const delta of fullStream) {
+    const { type } = delta;
 
-      if (type === 'text-delta') {
-        const { textDelta } = delta;
+    if (type === 'text-delta') {
+      const { textDelta } = delta;
 
-        draftContent += textDelta;
-        dataStream.writeData({
-          type: 'text-delta',
-          content: textDelta,
-        });
-      }
+      draftContent += textDelta;
+      dataStream.writeData({
+        type: 'text-delta',
+        content: textDelta,
+      });
     }
+  }
 
   return draftContent;
 }

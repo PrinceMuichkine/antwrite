@@ -342,24 +342,37 @@ function calculateDiff(oldContent: string, newContent: string): string {
     type: 'content_change',
     oldLength: oldContent.length,
     newLength: newContent.length,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 }
 
-export async function getLatestDocumentVersionById({ id }: { id: string }): Promise<(typeof schema.DocumentVersion.$inferSelect)[] | null> {
+export async function getLatestDocumentVersionById({
+  id,
+}: { id: string }): Promise<
+  (typeof schema.DocumentVersion.$inferSelect)[] | null
+> {
   try {
-    const data = await db.select().from(schema.DocumentVersion).where(eq(schema.DocumentVersion.documentId, id)).orderBy(desc(schema.DocumentVersion.createdAt)).limit(1);
+    const data = await db
+      .select()
+      .from(schema.DocumentVersion)
+      .where(eq(schema.DocumentVersion.documentId, id))
+      .orderBy(desc(schema.DocumentVersion.createdAt))
+      .limit(1);
     return data;
   } catch (error) {
-    console.error(`[DB Query - getLatestDocumentVersionById] Error fetching latest document version for doc ${id}:`, error);
-    throw new Error(`Failed to fetch latest document version: ${error instanceof Error ? error.message : String(error)}`);
-
+    console.error(
+      `[DB Query - getLatestDocumentVersionById] Error fetching latest document version for doc ${id}:`,
+      error,
+    );
+    throw new Error(
+      `Failed to fetch latest document version: ${error instanceof Error ? error.message : String(error)}`,
+    );
   }
 }
 
 export async function getAllDocumentVersions({
   documentId,
-  userId
+  userId,
 }: {
   documentId: string;
   userId: string;
@@ -382,15 +395,17 @@ export async function getAllDocumentVersions({
       .where(eq(schema.DocumentVersion.documentId, documentId))
       .orderBy(asc(schema.DocumentVersion.createdAt));
 
-    const allVersions: DocumentVersionData[] = historicalVersions.map((version) => ({
-      id: version.id,
-      content: version.content,
-      title: currentDocument.title, // Use current document title for all versions
-      createdAt: version.createdAt,
-      updatedAt: version.updatedAt,
-      version: version.version,
-      diffContent: version.diffContent,
-    }));
+    const allVersions: DocumentVersionData[] = historicalVersions.map(
+      (version) => ({
+        id: version.id,
+        content: version.content,
+        title: currentDocument.title, // Use current document title for all versions
+        createdAt: version.createdAt,
+        updatedAt: version.updatedAt,
+        version: version.version,
+        diffContent: version.diffContent,
+      }),
+    );
 
     // Add the current version to the end of the list
     allVersions.push({
@@ -420,14 +435,16 @@ export async function getAllDocumentVersions({
 export async function createDebouncedDocumentVersion({
   documentId,
   content,
-  userId
+  userId,
 }: {
   documentId: string;
   content: string;
   userId: string;
 }): Promise<typeof schema.DocumentVersion.$inferSelect | null> {
   try {
-    const latestVersion = await getLatestDocumentVersionById({ id: documentId });
+    const latestVersion = await getLatestDocumentVersionById({
+      id: documentId,
+    });
 
     // This might happen for a new document. The first version is created with the document itself.
     if (!latestVersion || latestVersion.length === 0) {
@@ -613,11 +630,7 @@ export async function getCurrentDocumentsByUserId({
         folderId: schema.Document.folderId,
       })
       .from(schema.Document)
-      .where(
-        and(
-          eq(schema.Document.userId, userId),
-        ),
-      )
+      .where(and(eq(schema.Document.userId, userId)))
       .orderBy(desc(schema.Document.createdAt));
     return data || [];
   } catch (error) {

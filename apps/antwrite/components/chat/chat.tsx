@@ -39,6 +39,13 @@ export function Chat({
     'chatMode',
     'agent',
   );
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by waiting for client-side mount
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const { documentId, documentTitle, documentContent } = useDocumentContext();
   const [documentContextActive, setDocumentContextActive] = useState(false);
   const { artifact } = useArtifact();
@@ -328,7 +335,7 @@ export function Chat({
         )}
       </div>
 
-      {!isReadonly && (
+      {!isReadonly && mounted && (
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-700">
           <form onSubmit={wrappedSubmit}>
             <MultimodalInput

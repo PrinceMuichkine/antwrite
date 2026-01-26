@@ -52,28 +52,44 @@ function isListActive(state: EditorState, type: any): boolean {
   return false;
 }
 
-function getMarkAttribute<T>(state: EditorState, markType: any, attrName: string): T | undefined {
-    const { from, to, empty } = state.selection;
-    let value: T | undefined;
+function getMarkAttribute<T>(
+  state: EditorState,
+  markType: any,
+  attrName: string,
+): T | undefined {
+  const { from, to, empty } = state.selection;
+  let value: T | undefined;
 
+  if (!empty) {
+    // For non-empty selections, check marks in the selected range
     state.doc.nodesBetween(from, to, (node) => {
-        if (value) return false;
-        const mark = markType.isInSet(node.marks);
-        if (mark) {
-            value = mark.attrs[attrName];
-        }
+      if (value) return false;
+      const mark = markType.isInSet(node.marks);
+      if (mark) {
+        value = mark.attrs[attrName];
+      }
     });
-
-    if (value === undefined && empty) {
-        const storedMark = (state.storedMarks || []).find(m => m.type === markType);
-        if (storedMark) {
-            value = storedMark.attrs[attrName];
-        }
+  } else {
+    // For empty selections (cursor), check stored marks first
+    const storedMark = (state.storedMarks || []).find(
+      (m) => m.type === markType,
+    );
+    if (storedMark) {
+      value = storedMark.attrs[attrName];
+    } else {
+      // If no stored marks, check the marks at the cursor position
+      // This handles cases where cursor is placed in text with marks
+      const $pos = state.selection.$from;
+      const marks = $pos.marks();
+      const mark = marks.find((m) => m.type === markType);
+      if (mark) {
+        value = mark.attrs[attrName];
+      }
     }
+  }
 
-    return value;
+  return value;
 }
-
 
 function getActiveFormats(state: EditorState): FormatState {
   return {
@@ -86,11 +102,13 @@ function getActiveFormats(state: EditorState): FormatState {
     italic: isMarkActive(state, marks.em),
     underline: isMarkActive(state, marks.underline),
     strike: isMarkActive(state, marks.strike),
-    fontFamily: getMarkAttribute(state, marks.fontFamily, 'fontFamily') || 'Arial',
-    fontSize: getMarkAttribute(state, marks.fontSize, 'fontSize') || '8px',
+    fontFamily:
+      getMarkAttribute(state, marks.fontFamily, 'fontFamily') || 'Arial',
+    fontSize: getMarkAttribute(state, marks.fontSize, 'fontSize') || '11px',
     textColor: getMarkAttribute(state, marks.textColor, 'color') || '#000000',
     textAlign: getMarkAttribute(state, marks.textAlign, 'align') || 'left',
-    lineHeight: getMarkAttribute(state, marks.lineHeight, 'lineHeight') || '1.5',
+    lineHeight:
+      getMarkAttribute(state, marks.lineHeight, 'lineHeight') || '1.5',
   };
 }
 

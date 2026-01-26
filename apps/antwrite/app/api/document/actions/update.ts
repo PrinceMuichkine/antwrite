@@ -82,7 +82,7 @@ export async function updateDocument(
     // --- Versioning Logic ---
     try {
       console.log(`[Document API - UPDATE] Updating content for ${documentId}`);
-      
+
       const updatePromise = updateDocumentContent({
         userId,
         documentId,
@@ -90,7 +90,7 @@ export async function updateDocument(
       });
 
       // Handle title update if provided (for restore operations)
-      const titlePromise = titleUpdate 
+      const titlePromise = titleUpdate
         ? renameDocumentTitle({ userId, documentId, newTitle: titleUpdate })
         : Promise.resolve();
 
@@ -100,7 +100,7 @@ export async function updateDocument(
             .then((v) => {
               if (v) {
                 console.log(
-                  `[Document API - UPDATE] Successfully created historical version ${v.version} for ${documentId}`
+                  `[Document API - UPDATE] Successfully created historical version ${v.version} for ${documentId}`,
                 );
               }
               return v;
@@ -108,14 +108,20 @@ export async function updateDocument(
             .catch((err) => {
               console.error(
                 `[Document API - UPDATE] Historical version creation failed for ${documentId}:`,
-                err
+                err,
               );
               return null;
             });
 
-      const [updatedDocument] = await Promise.all([updatePromise, titlePromise, debouncedPromise]);
+      const [updatedDocument] = await Promise.all([
+        updatePromise,
+        titlePromise,
+        debouncedPromise,
+      ]);
 
-      console.log(`[Document API - UPDATE] Document ${documentId} processed successfully.`);
+      console.log(
+        `[Document API - UPDATE] Document ${documentId} processed successfully.`,
+      );
       return NextResponse.json(updatedDocument);
     } catch (dbError: any) {
       console.error(

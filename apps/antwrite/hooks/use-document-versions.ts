@@ -8,7 +8,10 @@ import type { DocumentVersionData } from '@/types/document-version';
  * via the existing versionCache helper. Exposes a SWR-like API (mutate/refresh)
  * but does not depend on SWR.
  */
-export function useDocumentVersions(documentId: string | null, userId?: string | null) {
+export function useDocumentVersions(
+  documentId: string | null,
+  userId?: string | null,
+) {
   const [versions, setVersions] = useState<DocumentVersionData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const abortRef = useRef<AbortController | null>(null);
@@ -16,7 +19,8 @@ export function useDocumentVersions(documentId: string | null, userId?: string |
   /**
    */
   const fetchVersions = useCallback(async () => {
-    if (!documentId || documentId === 'init') return [] as DocumentVersionData[];
+    if (!documentId || documentId === 'init')
+      return [] as DocumentVersionData[];
     setIsLoading(true);
     try {
       abortRef.current?.abort();
@@ -24,13 +28,15 @@ export function useDocumentVersions(documentId: string | null, userId?: string |
       abortRef.current = controller;
       const res = await fetch(
         `/api/document?id=${encodeURIComponent(documentId)}&includeVersions=true`,
-        { signal: controller.signal }
+        { signal: controller.signal },
       );
       if (!res.ok) throw new Error('Failed to fetch versions');
       const data = (await res.json()) as DocumentVersionData[];
 
       if (userId) {
-        await versionCache.setVersions(documentId, data, userId).catch(() => {});
+        await versionCache
+          .setVersions(documentId, data, userId)
+          .catch(() => {});
       }
 
       setVersions(data);
@@ -78,12 +84,14 @@ export function useDocumentVersions(documentId: string | null, userId?: string |
   const mutate = useCallback(
     async (
       data?: DocumentVersionData[] | undefined,
-      options?: { revalidate?: boolean }
+      options?: { revalidate?: boolean },
     ) => {
       if (data) {
         setVersions(data);
         if (documentId && userId) {
-          await versionCache.setVersions(documentId, data, userId).catch(() => {});
+          await versionCache
+            .setVersions(documentId, data, userId)
+            .catch(() => {});
         }
       }
 
@@ -91,7 +99,7 @@ export function useDocumentVersions(documentId: string | null, userId?: string |
         await fetchVersions();
       }
     },
-    [fetchVersions, documentId, userId]
+    [fetchVersions, documentId, userId],
   );
 
   return {
@@ -101,9 +109,3 @@ export function useDocumentVersions(documentId: string | null, userId?: string |
     refresh: fetchVersions,
   } as const;
 }
-
-
-
-
-
-

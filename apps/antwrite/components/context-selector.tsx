@@ -340,7 +340,7 @@ export function ContextSelector({
         {/* Show items if a type is selected or there's a search query */}
         {(selectedType || searchQuery.trim() !== '' || searchTypeFilter) && (
           <div className="flex flex-col gap-1 animate-in fade-in-0 slide-in-from-top-1 duration-200">
-            {isLoading && <div></div>}
+            {isLoading && <div />}
             {!isLoading && items.length === 0 && (
               <div className="text-muted-foreground text-[6px] p-1.5">
                 No results found.

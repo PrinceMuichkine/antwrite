@@ -13,7 +13,6 @@ import {
 import { toast } from '@/components/toast';
 
 import type { DocumentVersionData } from '@/types/document-version';
-import { getDocumentTimestampByIndex } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { useArtifact } from '@/hooks/use-artifact';

@@ -48,8 +48,12 @@ declare global {
   interface Window {
     electronAPI?: {
       readFile: (filePath: string) => Promise<ArrayBuffer>;
-      getFileInfo: (filePath: string) => Promise<{ name: string; size: number; path: string }>;
-      onOpenWordFile: (callback: (event: any, filePath: string) => void) => void;
+      getFileInfo: (
+        filePath: string,
+      ) => Promise<{ name: string; size: number; path: string }>;
+      onOpenWordFile: (
+        callback: (event: any, filePath: string) => void,
+      ) => void;
       removeAllListeners: (event: string) => void;
     };
   }
@@ -121,16 +125,25 @@ export function AlwaysVisibleArtifact({
   const [saveStatus, setSaveStatus] = useState<'saving' | 'idle'>('idle');
   const [isUploadHovered, setIsUploadHovered] = useState(false);
 
-  const { versions, isLoading: versionsLoading, mutate: mutateVersions, refresh: refreshVersions } = useDocumentVersions(initialDocumentId, user?.id);
+  const {
+    versions,
+    isLoading: versionsLoading,
+    mutate: mutateVersions,
+    refresh: refreshVersions,
+  } = useDocumentVersions(initialDocumentId, user?.id);
 
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
   const [currentVersionIndex, setCurrentVersionIndex] = useState<number>(-1);
 
   // When the component mounts or the document ID changes, sync the artifact context.
   useEffect(() => {
-    if (initialDocumentId && initialDocumentId !== 'init' && initialDocumentId !== artifact.documentId) {
-      const doc = initialDocuments.find(d => d.id === initialDocumentId);
-      setArtifact(prev => ({
+    if (
+      initialDocumentId &&
+      initialDocumentId !== 'init' &&
+      initialDocumentId !== artifact.documentId
+    ) {
+      const doc = initialDocuments.find((d) => d.id === initialDocumentId);
+      setArtifact((prev) => ({
         ...prev,
         documentId: initialDocumentId,
         title: doc?.title || '',
@@ -238,10 +251,10 @@ export function AlwaysVisibleArtifact({
     };
 
     const handleVersionFork = async (event: CustomEvent) => {
-      const { originalDocumentId, versionIndex, forkFromTimestamp } = event.detail;
+      const { originalDocumentId, versionIndex, forkFromTimestamp } =
+        event.detail;
 
       if (originalDocumentId !== artifact.documentId) return;
-
 
       try {
         // Get the current document title for naming the fork
@@ -261,24 +274,28 @@ export function AlwaysVisibleArtifact({
         });
 
         if (!response.ok) {
-          const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-          throw new Error(`Fork failed: ${errorData.error || response.statusText}`);
+          const errorData = await response
+            .json()
+            .catch(() => ({ error: 'Unknown error' }));
+          throw new Error(
+            `Fork failed: ${errorData.error || response.statusText}`,
+          );
         }
 
         const forkResult = await response.json();
 
         // Navigate to the new forked document
         toast({
-          description: `Forked to new document: ${forkTitle}`
+          description: `Forked to new document: ${forkTitle}`,
         });
-        const newId = forkResult.newDocumentId ?? forkResult.documentId ?? forkResult.id;
+        const newId =
+          forkResult.newDocumentId ?? forkResult.documentId ?? forkResult.id;
         router.push(`/documents/${newId}`);
-
       } catch (error: any) {
         console.error('[DocumentWorkspace] Version fork failed:', error);
         toast({
           type: 'error',
-          description: `Failed to fork document: ${error.message}`
+          description: `Failed to fork document: ${error.message}`,
         });
       }
     };
@@ -287,16 +304,29 @@ export function AlwaysVisibleArtifact({
       'document-renamed',
       handleDocumentRenamed as EventListener,
     );
-    window.addEventListener('version-fork', handleVersionFork as unknown as EventListener);
+    window.addEventListener(
+      'version-fork',
+      handleVersionFork as unknown as EventListener,
+    );
 
     return () => {
       window.removeEventListener(
         'document-renamed',
         handleDocumentRenamed as EventListener,
       );
-      window.removeEventListener('version-fork', handleVersionFork as unknown as EventListener);
-    }
-  }, [artifact.documentId, editingTitle, newTitle, setArtifact, documents, router]);
+      window.removeEventListener(
+        'version-fork',
+        handleVersionFork as unknown as EventListener,
+      );
+    };
+  }, [
+    artifact.documentId,
+    editingTitle,
+    newTitle,
+    setArtifact,
+    documents,
+    router,
+  ]);
 
   // Focus editor when document changes or component mounts
   useEffect(() => {
@@ -376,7 +406,6 @@ export function AlwaysVisibleArtifact({
     };
   }, [artifact.documentId, artifact.content, artifact.title, latestDocument]);
 
-
   const handleDocumentUpdate = (updatedFields: Partial<Document>) => {
     // Only update if we have version data loaded
     if (documents.length > 0) {
@@ -386,7 +415,10 @@ export function AlwaysVisibleArtifact({
             return {
               ...doc,
               title: updatedFields.title ?? doc.title,
-              content: updatedFields.content !== undefined ? updatedFields.content : doc.content,
+              content:
+                updatedFields.content !== undefined
+                  ? updatedFields.content
+                  : doc.content,
             };
           }
           return doc;
@@ -453,11 +485,14 @@ export function AlwaysVisibleArtifact({
     setNewTitle(latestDocument.title);
   }, [latestDocument]);
 
-  const handleVersionChangeByIndex = useCallback((index: number) => {
-    if (index < 0 || index >= documents.length) return;
-    setCurrentVersionIndex(index);
-    setMode(index === documents.length - 1 ? 'edit' : 'diff');
-  }, [documents.length]);
+  const handleVersionChangeByIndex = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= documents.length) return;
+      setCurrentVersionIndex(index);
+      setMode(index === documents.length - 1 ? 'edit' : 'diff');
+    },
+    [documents.length],
+  );
 
   const handleVersionChange = useCallback(
     (type: 'next' | 'prev' | 'toggle' | 'latest') => {
@@ -555,110 +590,122 @@ export function AlwaysVisibleArtifact({
     setSaveStatus(newSaveState.status === 'saving' ? 'saving' : 'idle');
   }, []);
 
+  const handleImportWordDocument = useCallback(
+    async (file: File) => {
+      if (!file) return;
 
-  const handleImportWordDocument = useCallback(async (file: File) => {
-    if (!file) return;
-
-    // Validate file type
-    const isValidFile = file.name.toLowerCase().endsWith('.docx') || file.name.toLowerCase().endsWith('.doc');
-    if (!isValidFile) {
-      toast({
-        type: 'error',
-        description: 'Please select a Word document (.docx or .doc file)',
-      });
-      return;
-    }
-
-    // Validate file size (max 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      toast({
-        type: 'error',
-        description: 'File too large. Max 10MB allowed.',
-      });
-      return;
-    }
-
-    try {
-      toast({
-        description: 'Converting document...',
-      });
-
-      // Read file as array buffer
-      const arrayBuffer = await file.arrayBuffer();
-
-      // Import the new DOCX converter
-      const { convertDocxToProseMirror } = await import('@/lib/utils/docx-import');
-
-      // Convert DOCX directly to ProseMirror document
-      const proseMirrorDoc = await convertDocxToProseMirror(arrayBuffer);
-
-      // Build content from the ProseMirror document
-      const { buildContentFromDocument } = await import('@/lib/editor/functions');
-      const content = buildContentFromDocument(proseMirrorDoc);
-
-      // Create document title from filename (remove extension)
-      const title = file.name.replace(/\.docx?$/i, '') || 'Imported Document';
-
-      // Create new document with the converted content
-      await createDocument({
-        title,
-        content,
-        kind: 'text',
-        chatId: null,
-        navigateAfterCreate: true,
-      });
-
-      toast({
-        type: 'success',
-        description: 'Document imported successfully with formatting preserved',
-      });
-    } catch (error: any) {
-      console.error('Error importing document:', error);
-      toast({
-        type: 'error',
-        description: `Failed to import document: ${error.message}`,
-      });
-    }
-  }, [createDocument]);
-
-  const handleElectronWordFile = useCallback(async (filePath: string) => {
-    try {
-      toast({
-        description: 'Opening Word document...',
-      });
-
-      // Check if we're in Electron environment
-      const electronAPI = (window as any).electronAPI;
-      if (typeof window === 'undefined' || !electronAPI) {
+      // Validate file type
+      const isValidFile =
+        file.name.toLowerCase().endsWith('.docx') ||
+        file.name.toLowerCase().endsWith('.doc');
+      if (!isValidFile) {
         toast({
           type: 'error',
-          description: 'Electron API not available',
+          description: 'Please select a Word document (.docx or .doc file)',
         });
         return;
       }
 
-      // Get file info and read content
-      const fileInfo = await electronAPI.getFileInfo(filePath);
-      const fileBuffer = await electronAPI.readFile(filePath);
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          type: 'error',
+          description: 'File too large. Max 10MB allowed.',
+        });
+        return;
+      }
 
-      // Convert buffer to File-like object for processing
-      const isDocx = fileInfo.name.toLowerCase().endsWith('.docx');
-      const file = new File([fileBuffer], fileInfo.name, {
-        type: isDocx
-          ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          : 'application/msword',
-      });
+      try {
+        toast({
+          description: 'Converting document...',
+        });
 
-      // Process the file with the improved import function
-      await handleImportWordDocument(file);
-    } catch (error: any) {
-      console.error('Error handling Electron Word file:', error);
-      toast({
-        type: 'error',
-        description: `Failed to open Word document: ${error.message}`,
-      });
-    }
-  }, [handleImportWordDocument]);
+        // Read file as array buffer
+        const arrayBuffer = await file.arrayBuffer();
+
+        // Import the new DOCX converter
+        const { convertDocxToProseMirror } = await import(
+          '@/lib/utils/docx-import'
+        );
+
+        // Convert DOCX directly to ProseMirror document
+        const proseMirrorDoc = await convertDocxToProseMirror(arrayBuffer);
+
+        // Build content from the ProseMirror document
+        const { buildContentFromDocument } = await import(
+          '@/lib/editor/functions'
+        );
+        const content = buildContentFromDocument(proseMirrorDoc);
+
+        // Create document title from filename (remove extension)
+        const title = file.name.replace(/\.docx?$/i, '') || 'Imported Document';
+
+        // Create new document with the converted content
+        await createDocument({
+          title,
+          content,
+          kind: 'text',
+          chatId: null,
+          navigateAfterCreate: true,
+        });
+
+        toast({
+          type: 'success',
+          description:
+            'Document imported successfully with formatting preserved',
+        });
+      } catch (error: any) {
+        console.error('Error importing document:', error);
+        toast({
+          type: 'error',
+          description: `Failed to import document: ${error.message}`,
+        });
+      }
+    },
+    [createDocument],
+  );
+
+  const handleElectronWordFile = useCallback(
+    async (filePath: string) => {
+      try {
+        toast({
+          description: 'Opening Word document...',
+        });
+
+        // Check if we're in Electron environment
+        const electronAPI = (window as any).electronAPI;
+        if (typeof window === 'undefined' || !electronAPI) {
+          toast({
+            type: 'error',
+            description: 'Electron API not available',
+          });
+          return;
+        }
+
+        // Get file info and read content
+        const fileInfo = await electronAPI.getFileInfo(filePath);
+        const fileBuffer = await electronAPI.readFile(filePath);
+
+        // Convert buffer to File-like object for processing
+        const isDocx = fileInfo.name.toLowerCase().endsWith('.docx');
+        const file = new File([fileBuffer], fileInfo.name, {
+          type: isDocx
+            ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            : 'application/msword',
+        });
+
+        // Process the file with the improved import function
+        await handleImportWordDocument(file);
+      } catch (error: any) {
+        console.error('Error handling Electron Word file:', error);
+        toast({
+          type: 'error',
+          description: `Failed to open Word document: ${error.message}`,
+        });
+      }
+    },
+    [handleImportWordDocument],
+  );
 
   // Handle Electron Word document opening
   useEffect(() => {
@@ -676,14 +723,17 @@ export function AlwaysVisibleArtifact({
     };
   }, [handleElectronWordFile]);
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      handleImportWordDocument(file);
-    }
-    // Reset input value so the same file can be selected again
-    event.target.value = '';
-  }, [handleImportWordDocument]);
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        handleImportWordDocument(file);
+      }
+      // Reset input value so the same file can be selected again
+      event.target.value = '';
+    },
+    [handleImportWordDocument],
+  );
 
   const isCurrentVersion = useMemo(
     () => currentVersionIndex === documents.length - 1,
@@ -821,7 +871,9 @@ export function AlwaysVisibleArtifact({
                   className="size-8 p-0 flex items-center justify-center transition-colors"
                   onMouseEnter={() => setIsUploadHovered(true)}
                   onMouseLeave={() => setIsUploadHovered(false)}
-                  onClick={() => document.getElementById('word-import-input')?.click()}
+                  onClick={() =>
+                    document.getElementById('word-import-input')?.click()
+                  }
                 >
                   <LottieIcon
                     animationData={animations.fileplus}
@@ -837,10 +889,7 @@ export function AlwaysVisibleArtifact({
             </Tooltip>
           </div>
           {documents && documents.length > 0 && (
-            <DocumentActions
-              content={editorContent}
-              saveStatus={saveStatus}
-            />
+            <DocumentActions content={editorContent} saveStatus={saveStatus} />
           )}
           {latestDocument && (
             <PublishSettingsMenu

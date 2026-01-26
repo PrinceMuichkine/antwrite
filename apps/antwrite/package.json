@@ -6,7 +6,8 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "knip": "knip"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",
@@ -118,6 +119,7 @@
     "@types/react-dom": "^18.3.7",
     "@types/turndown": "^5.0.5",
     "drizzle-orm": "^0.34.1",
+    "knip": "^5.27.0",
     "eslint": "^8",
     "typescript": "^5"
   }

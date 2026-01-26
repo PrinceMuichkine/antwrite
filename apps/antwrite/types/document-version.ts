@@ -32,7 +32,10 @@ export function isDocumentVersionData(obj: any): obj is DocumentVersionData {
  * Convert a Document to DocumentVersionData format
  * Used for backward compatibility
  */
-export function documentToVersionData(doc: any, version: number = 1): DocumentVersionData {
+export function documentToVersionData(
+  doc: any,
+  version = 1,
+): DocumentVersionData {
   return {
     id: doc.id,
     content: doc.content,
